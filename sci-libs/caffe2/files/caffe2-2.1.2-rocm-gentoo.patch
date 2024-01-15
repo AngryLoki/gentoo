@@ -1,0 +1,40 @@
+--- a/aten/CMakeLists.txt
++++ b/aten/CMakeLists.txt
+@@ -64,7 +64,7 @@ endif()
+ if(USE_ROCM)
+   include(LoadHIP)
+   if(NOT PYTORCH_FOUND_HIP)
+-    set(USE_ROCM OFF)
++    message(FATAL_ERROR "ROCm build was requested, but ROCm libraries were not found")
+   endif()
+ endif()
+ 
+--- a/cmake/public/LoadHIP.cmake
++++ b/cmake/public/LoadHIP.cmake
+@@ -1,7 +1,7 @@
+ set(PYTORCH_FOUND_HIP FALSE)
+ 
+ if(NOT DEFINED ENV{ROCM_PATH})
+-  set(ROCM_PATH /opt/rocm)
++  set(ROCM_PATH /usr)
+ else()
+   set(ROCM_PATH $ENV{ROCM_PATH})
+ endif()
+@@ -12,7 +12,7 @@ else()
+ endif()
+ # HIP_PATH
+ if(NOT DEFINED ENV{HIP_PATH})
+-  set(HIP_PATH ${ROCM_PATH}/hip)
++  set(HIP_PATH /usr)
+ else()
+   set(HIP_PATH $ENV{HIP_PATH})
+ endif()
+@@ -155,7 +155,7 @@ endif()
+ message("Building PyTorch for GPU arch: ${PYTORCH_ROCM_ARCH}")
+ 
+ # Add HIP to the CMAKE Module Path
+-set(CMAKE_MODULE_PATH ${HIP_PATH}/cmake ${CMAKE_MODULE_PATH})
++set(CMAKE_MODULE_PATH /usr/lib64/cmake/hip ${CMAKE_MODULE_PATH})
+ 
+ macro(find_package_and_print_version PACKAGE_NAME)
+   find_package("${PACKAGE_NAME}" ${ARGN})
