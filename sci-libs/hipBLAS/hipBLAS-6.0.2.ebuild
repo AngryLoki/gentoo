@@ -7,8 +7,8 @@ ROCM_VERSION=${PV}
 
 inherit cmake rocm
 DESCRIPTION="ROCm BLAS marshalling library"
-HOMEPAGE="https://github.com/ROCmSoftwarePlatform/hipBLAS"
-SRC_URI="https://github.com/ROCmSoftwarePlatform/hipBLAS/archive/rocm-${PV}.tar.gz -> ${P}.tar.gz"
+HOMEPAGE="https://github.com/ROCm/hipBLAS"
+SRC_URI="https://github.com/ROCm/hipBLAS/archive/rocm-${PV}.tar.gz -> ${P}.tar.gz"
 REQUIRED_USE="${ROCM_REQUIRED_USE}"
 
 LICENSE="MIT"
@@ -31,5 +31,5 @@ src_configure() {
 		-DROCM_SYMLINK_LIBS=OFF
 	)
 
-	CXX=hipcc cmake_src_configure
+	cmake_src_configure
 }
