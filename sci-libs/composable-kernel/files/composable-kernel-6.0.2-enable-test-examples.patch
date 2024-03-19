@@ -1,0 +1,19 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -439,8 +439,14 @@ if(NOT DEFINED INSTANCES_ONLY)
+         LIBRARY_NAME composablekernel
+         PACKAGE_NAME examples
+    )
+-   add_subdirectory(example)
+-   add_subdirectory(test)
++   option(BUILD_EXAMPLES "Build examples" OFF)
++   if(BUILD_EXAMPLES)
++     add_subdirectory(example)
++   endif()
++   option(BUILD_TESTS "Build binaries for tests" OFF)
++   if(BUILD_TESTS)
++     add_subdirectory(test)
++   endif()
+ 
+    rocm_package_setup_component(profiler
+         LIBRARY_NAME composablekernel

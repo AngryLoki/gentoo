@@ -5,16 +5,14 @@ EAPI=8
 
 ROCM_VERSION=${PV}
 
-inherit cmake flag-o-matic llvm rocm
+inherit cmake flag-o-matic rocm
 
 GTEST_COMMIT="b85864c64758dec007208e56af933fc3f52044ee"
 GTEST_FILE="gtest-1.14.0_p20220421.tar.gz"
 
-LLVM_MAX_SLOT=17
-
 DESCRIPTION="High Performance Composable Kernel for AMD GPUs"
-HOMEPAGE="https://github.com/ROCmSoftwarePlatform/composable_kernel"
-SRC_URI="https://github.com/ROCmSoftwarePlatform/composable_kernel/archive/rocm-${PV}.tar.gz -> ${P}.tar.gz
+HOMEPAGE="https://github.com/ROCm/composable_kernel"
+SRC_URI="https://github.com/ROCm/composable_kernel/archive/rocm-${PV}.tar.gz -> ${P}.tar.gz
 	test? ( https://github.com/google/googletest/archive/${GTEST_COMMIT}.tar.gz -> ${GTEST_FILE} )"
 
 LICENSE="MIT"
@@ -43,7 +41,9 @@ BDEPEND="
 S="${WORKDIR}/composable_kernel-rocm-${PV}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-5.7.1-enable-test-examples.patch"
+	"${FILESDIR}/${PN}-6.0.2-enable-test-examples.patch"
+	"${FILESDIR}/${PN}-6.0.2-fix-clang-17-no-offload-uniform-block.patch"
+	"${FILESDIR}/${PN}-6.0.2-no-git-no-hash.patch"
 )
 
 src_prepare() {
@@ -63,7 +63,7 @@ src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_SKIP_RPATH=ON
 		-DBUILD_DEV=OFF
-		-DAMDGPU_TARGETS="$(get_amdgpu_flags)"
+		-DGPU_TARGETS="$(get_amdgpu_flags)"
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
 		-DBUILD_TESTS=$(usex test ON OFF)
 	)
