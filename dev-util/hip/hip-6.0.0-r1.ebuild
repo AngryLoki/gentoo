@@ -7,17 +7,15 @@ DOCS_BUILDER="doxygen"
 DOCS_DEPEND="media-gfx/graphviz"
 ROCM_SKIP_GLOBALS=1
 
-inherit cmake docs flag-o-matic llvm rocm
+LLVM_COMPAT=( 17 )
 
-LLVM_MAX_SLOT=17
-
-TEST_PV=5.7.0 # No hip-test-5.7.1 release
+inherit cmake docs flag-o-matic llvm-r1 rocm
 
 DESCRIPTION="C++ Heterogeneous-Compute Interface for Portability"
-HOMEPAGE="https://github.com/ROCm-Developer-Tools/hipamd"
-SRC_URI="https://github.com/ROCm-Developer-Tools/clr/archive/refs/tags/rocm-${PV}.tar.gz -> rocm-clr-${PV}.tar.gz
-	https://github.com/ROCm-Developer-Tools/HIP/archive/refs/tags/rocm-${PV}.tar.gz -> hip-${PV}.tar.gz
-	test? ( https://github.com/ROCm-Developer-Tools/hip-tests/archive/refs/tags/rocm-${TEST_PV}.tar.gz )"
+HOMEPAGE="https://github.com/ROCm/clr"
+SRC_URI="https://github.com/ROCm/clr/archive/refs/tags/rocm-${PV}.tar.gz -> rocm-clr-${PV}.tar.gz
+	https://github.com/ROCm/HIP/archive/refs/tags/rocm-${PV}.tar.gz -> hip-${PV}.tar.gz
+	test? ( https://github.com/ROCm/hip-tests/archive/refs/tags/rocm-${PV}.tar.gz )"
 
 KEYWORDS="~amd64"
 LICENSE="MIT"
@@ -29,9 +27,11 @@ IUSE="debug test"
 DEPEND="
 	dev-util/hipcc
 	>=dev-util/rocminfo-5
-	sys-devel/clang:${LLVM_MAX_SLOT}
+	$(llvm_gen_dep '
+		sys-devel/clang:${LLVM_SLOT}
+	')
 	dev-libs/rocm-comgr:${SLOT}
-	>=dev-libs/rocr-runtime-5.6
+	dev-libs/rocr-runtime:${SLOT}
 	x11-base/xorg-proto
 	virtual/opengl
 "
@@ -60,12 +60,13 @@ hip_test_wrapper() {
 }
 
 src_prepare() {
-	# hipamd is itself built by cmake, and should never provide a
-	# FindHIP.cmake module.
-	rm -r "${WORKDIR}"/HIP-rocm-${PV}/cmake/FindHIP* || die
+	# Set HIP and HIP Clang paths directly, don't search using heuristics
+	sed -e "s:# Search for HIP installation:set(HIP_ROOT_DIR \"${EPREFIX}/usr\"):" \
+		-e "s:#Set HIP_CLANG_PATH:set(HIP_CLANG_PATH \"$(get_llvm_prefix -d)/bin\"):" \
+	    -i "${WORKDIR}"/HIP-rocm-${PV}/cmake/FindHIP.cmake || die
 
-	# https://github.com/ROCm-Developer-Tools/HIP/commit/405d029422ba8bb6be5a233d5eebedd2ad2e8bd3
-	# https://github.com/ROCm-Developer-Tools/clr/commit/ab6d34ae773f4d151e04170c0f4e46c1135ddf3e
+	# https://github.com/ROCm/HIP/commit/405d029422ba8bb6be5a233d5eebedd2ad2e8bd3
+	# https://github.com/ROCm/clr/commit/ab6d34ae773f4d151e04170c0f4e46c1135ddf3e
 	# Migrated to hip-test, but somehow the change is not applied to the tarball.
 	rm -rf "${WORKDIR}"/HIP-rocm-${PV}/tests || die
 	sed -e '/tests.*cmake/d' -i hipamd/CMakeLists.txt || die
@@ -91,13 +92,12 @@ src_configure() {
 
 	# Fix ld.lld linker error: https://github.com/ROCm/HIP/issues/3382
 	# See also: https://github.com/gentoo/gentoo/pull/29097
-	append-ldflags $(tc-flags-CCLD -Wl,--undefined-version)
+	append-ldflags $(test-flags-CCLD -Wl,--undefined-version)
 
 	local mycmakeargs=(
-		-DCMAKE_PREFIX_PATH="$(get_llvm_prefix "${LLVM_MAX_SLOT}")"
+		-DCMAKE_PREFIX_PATH="$(get_llvm_prefix)"
 		-DCMAKE_BUILD_TYPE=${buildtype}
 		-DCMAKE_SKIP_RPATH=ON
-		-DBUILD_HIPIFY_CLANG=OFF
 		-DHIP_PLATFORM=amd
 		-DHIP_COMMON_DIR="${WORKDIR}/HIP-rocm-${PV}"
 		-DROCM_PATH="${EPREFIX}/usr"
@@ -152,6 +152,17 @@ src_test() {
 
 src_install() {
 	cmake_src_install
+
+	# add version file that is required by some libraries
+	mkdir "${ED}"/usr/include/rocm-core || die
+	cat <<EOF > "${ED}"/usr/include/rocm-core/rocm_version.h || die
+#pragma once
+#define ROCM_VERSION_MAJOR $(ver_cut 1)
+#define ROCM_VERSION_MINOR $(ver_cut 2)
+#define ROCM_VERSION_PATCH $(ver_cut 3)
+#define ROCM_BUILD_INFO "$(ver_cut 1-3).0-9999-unknown"
+EOF
+	dosym -r /usr/include/rocm-core/rocm_version.h /usr/include/rocm_version.h
 
 	# files already installed by hipcc, which is a build dep
 	rm "${ED}/usr/bin/hipconfig.pl" || die
