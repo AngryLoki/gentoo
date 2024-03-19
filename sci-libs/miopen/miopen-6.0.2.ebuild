@@ -13,9 +13,9 @@ GTEST_FILE="gtest-1.11.0_p20210611.tar.gz"
 LLVM_MAX_SLOT=17
 
 DESCRIPTION="AMD's Machine Intelligence Library"
-HOMEPAGE="https://github.com/ROCmSoftwarePlatform/MIOpen"
+HOMEPAGE="https://github.com/ROCm/MIOpen"
 
-SRC_URI="https://github.com/ROCmSoftwarePlatform/MIOpen/archive/rocm-${PV}.tar.gz -> MIOpen-${PV}.tar.gz
+SRC_URI="https://github.com/ROCm/MIOpen/archive/rocm-${PV}.tar.gz -> MIOpen-${PV}.tar.gz
 	test? ( https://github.com/google/googletest/archive/${GTEST_COMMIT}.tar.gz -> ${GTEST_FILE} )"
 
 LICENSE="MIT"
@@ -30,6 +30,7 @@ RDEPEND="
 	>=dev-db/sqlite-3.17
 	sci-libs/rocBLAS:${SLOT}[${ROCM_USEDEP}]
 	sci-libs/composable-kernel:${SLOT}[${ROCM_USEDEP}]
+	dev-util/roctracer:${SLOT}[${ROCM_USEDEP}]
 	>=dev-libs/boost-1.72
 	dev-cpp/nlohmann_json
 	dev-cpp/frugally-deep
@@ -37,20 +38,16 @@ RDEPEND="
 
 DEPEND="${RDEPEND}"
 
-BDEPEND="dev-libs/half:0/1
+BDEPEND="
+	>=dev-libs/half-1.12.0-r1
 	dev-build/rocm-cmake
 "
 
 S="${WORKDIR}/MIOpen-rocm-${PV}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-4.2.0-disable-no-inline-boost.patch"
-	"${FILESDIR}/${PN}-4.2.0-gcc11-numeric_limits.patch"
-	"${FILESDIR}/${PN}-4.3.0-fix-interface-include-in-HIP_COMPILER_FLAGS.patch"
-	"${FILESDIR}/${PN}-4.3.0-enable-test.patch"
-	"${FILESDIR}/${PN}-5.1.3-no-strip.patch"
-	"${FILESDIR}/${PN}-5.1.3-include-array.patch"
-	"${FILESDIR}/${PN}-5.7.1-fix-miopendriver-gemm.patch"
+	"${FILESDIR}/${PN}"-6.0.2-enable-test.patch
+	"${FILESDIR}/${PN}"-6.0.2-clang-17-offload-uniform.patch
 )
 
 src_prepare() {
@@ -60,7 +57,7 @@ src_prepare() {
 		-e "s:/opt/rocm/hip:$(hipconfig -p) NO_DEFAULT_PATH:" \
 		-e '/set( MIOPEN_INSTALL_DIR/s:miopen:${CMAKE_INSTALL_PREFIX}:' \
 		-e '/MIOPEN_TIDY_ERRORS ALL/d' \
-		-e 's:find_program(UNZIPPER lbunzip2 bunzip2):find_program(UNZIPPER NAMES lbunzip2 bunzip2):' \
+		-e 's/FLAGS_RELEASE} -s/FLAGS_RELEASE}/g' \
 		-i CMakeLists.txt || die
 
 	sed -e "/add_test/s:--build \${CMAKE_CURRENT_BINARY_DIR}:--build ${BUILD_DIR}:" \
@@ -81,6 +78,14 @@ src_configure() {
 		CMAKE_BUILD_TYPE="Debug"
 	fi
 
+	# miopen 6.0.2 officially supports only clang-18 and requires patch for clang-17
+	local hipcc_clang_version=$(hipcc --version | grep "clang version" | cut -d " " -f 3) || die
+	if [[ $hipcc_clang_version == 17.* ]]; then
+		local use_no_offload_uniform_block=OFF
+	else
+		local use_no_offload_uniform_block=ON
+	fi
+
 	local mycmakeargs=(
 		-DCMAKE_SKIP_RPATH=ON
 		-DAMDGPU_TARGETS="$(get_amdgpu_flags)"
@@ -91,7 +96,7 @@ src_configure() {
 		-DBUILD_TESTS=$(usex test ON OFF)
 		-DBUILD_FILE_REORG_BACKWARD_COMPATIBILITY=OFF
 		-DROCM_SYMLINK_LIBS=OFF
-		-DHALF_INCLUDE_DIR="${EPREFIX}/usr/include/half"
+		-DMIOPEN_HIP_COMPILER_HAS_OPTION_OFFLOAD_UNIFORM_BLOCK=${use_no_offload_uniform_block}
 	)
 
 	if use test; then
@@ -106,11 +111,7 @@ src_configure() {
 		done
 	fi
 
-	addpredict /dev/kfd
-	addpredict /dev/dri/
-	append-cxxflags "--rocm-path=$(hipconfig -R)"
-	append-cxxflags "--hip-device-lib-path=${EPREFIX}/usr/lib/amdgcn/bitcode"
-	CXX="$(get_llvm_prefix ${LLVM_MAX_SLOT})/bin/clang++" cmake_src_configure
+	CXX=hipcc cmake_src_configure
 }
 
 src_test() {

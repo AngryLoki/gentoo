@@ -1,0 +1,27 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -251,9 +251,10 @@ math(EXPR MIOPEN_hip_VERSION_FLAT "(${MIOPEN_hip_VERSION_MAJOR} * 1000 + ${MIOPE
+ set_var_to_condition(MIOPEN_USE_HIPRTC_DEFAULT ${MIOPEN_USE_COMGR} AND (${MIOPEN_hip_VERSION_FLAT} GREATER 500000000))
+ option(MIOPEN_USE_HIPRTC "Use HIPRTC to build HIP kernels instead of COMGR" ${MIOPEN_USE_HIPRTC_DEFAULT})
+ 
+-# WORKAROUND_SWDEV_413293
+-if(${MIOPEN_hip_VERSION_FLAT} GREATER_EQUAL 500723302)
++option(MIOPEN_HIP_COMPILER_HAS_OPTION_OFFLOAD_UNIFORM_BLOCK "Pass -fno-offload-uniform-block to HIP compiler")
++if(${MIOPEN_HIP_COMPILER_HAS_OPTION_OFFLOAD_UNIFORM_BLOCK})
+     string(APPEND HIP_COMPILER_FLAGS " -fno-offload-uniform-block ")
++    add_compile_definitions(MIOPEN_HIP_COMPILER_HAS_OPTION_OFFLOAD_UNIFORM_BLOCK)
+ endif()
+ 
+ message(STATUS "Hip compiler flags: ${HIP_COMPILER_FLAGS}")
+--- a/src/comgr.cpp
++++ b/src/comgr.cpp
+@@ -1318,7 +1318,8 @@ void BuildHip(const std::string& name,
+         opts.push_back("-Wno-cuda-compat");
+         opts.push_back("-fno-gpu-rdc");
+         opts.push_back("-O3");
+-#if WORKAROUND_SWDEV_413293
++
++#if WORKAROUND_SWDEV_413293 && defined(MIOPEN_HIP_COMPILER_HAS_OPTION_OFFLOAD_UNIFORM_BLOCK)
+         opts.push_back("-fno-offload-uniform-block");
+ #endif
+         if(std::none_of(opts.begin(), opts.end(), [](const std::string& s) {
