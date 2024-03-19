@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors.
+# Copyright 1999-2024 Gentoo Authors.
 # Distributed under the terms of the GNU General Public License v2
 
 # Reference:
@@ -10,6 +10,9 @@ gfx900 - Vega GPU, codename vega10, including Radeon Vega Frontier Edition, Rade
 gfx906 - Vega GPU, codename vega20, including Radeon (Pro) VII, Radeon Instinct MI50/MI60
 gfx908 - CDNA Accelerator, codename arcturus, including AMD Instinct MI100 Accelerator
 gfx90a - CDNA2 Accelerator, codename aldebaran, including AMD Instinct MI200 series Accelerators
+gfx940 - CDNA3 Accelerator, codename aquavanjaram940, compatible with AMD Instinct MI300A
+gfx941 - CDNA3 Accelerator, codename aquavanjaram941, compatible with AMD Instinct MI300X
+gfx942 - CDNA3 Accelerator, codename aquavanjaram942, compatible with AMD Instinct MI300A/MI300X
 gfx1010 - RDNA GPU, codename navi10, including Radeon RX 5700XT/5700/5700M/5700B/5700XTB/5600XT/5600/5600M, Radeon Pro 5700XT/5700, Radeon Pro W5700X/W5700
 gfx1011 - RDNA GPU, codename navi12, including Radeon Pro 5600M/V520
 gfx1012 - RDNA GPU, codename navi14, including Radeon RX 5500XT/5500/5500M/5500XTB/5300/5300M, Radeon Pro 5500XT/5500M/5300/5300M, Radeon Pro W5500X/W5500/W5500M/W5300M
