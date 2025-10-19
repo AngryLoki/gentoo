@@ -19,6 +19,13 @@ KEYWORDS="~amd64"
 
 IUSE="composable-kernel debug hipblaslt rocblas roctracer test"
 
+REQUIRED_USE="
+	${ROCM_REQUIRED_USE}
+	composable-kernel? (
+		|| ( amdgpu_targets_gfx908 amdgpu_targets_gfx90a amdgpu_targets_gfx942 amdgpu_targets_gfx950 )
+	)
+"
+
 # tests can freeze machine depending on gpu/kernel
 RESTRICT="test"
 
