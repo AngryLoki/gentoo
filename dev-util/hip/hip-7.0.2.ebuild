@@ -89,9 +89,10 @@ PATCHES=(
 	"${FILESDIR}/${PN}-6.3.0-no-isystem-usr-include.patch"
 	"${FILESDIR}/${PN}-6.3.0-clr-fix-libcxx.patch"
 	"${FILESDIR}/${PN}-6.4.1-no-glibcxx-assert.patch"
+	"${FILESDIR}/${PN}-7.0.2-fix-libcxx-noinline.patch"
 )
 
-# /usr/lib64/libhiprtc-builtins.so.7.0.51831
+QA_FLAGS_IGNORED="usr/lib.*/libhiprtc-builtins.*"
 
 hip_test_wrapper() {
 	local CMAKE_USE_DIR="${TEST_S}"
