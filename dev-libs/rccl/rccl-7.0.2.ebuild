@@ -3,8 +3,7 @@
 
 EAPI=8
 
-ROCM_VERSION=${PV}
-
+ROCM_SKIP_GLOBALS=1
 inherit cmake edo rocm flag-o-matic
 
 DESCRIPTION="ROCm Communication Collectives Library (RCCL)"
@@ -15,7 +14,17 @@ S="${WORKDIR}/rccl-rocm-${PV}"
 LICENSE="BSD"
 SLOT="0/$(ver_cut 1-2)"
 KEYWORDS="~amd64"
-IUSE="roctracer test"
+
+# fails to compile on gfx1151
+IUSE_TARGETS=( gfx906 gfx908 gfx90a gfx942 gfx950 gfx1030 gfx1100 gfx1101 gfx1102 gfx1200 gfx1201 )
+IUSE_TARGETS=( "${IUSE_TARGETS[@]/#/amdgpu_targets_}" )
+ROCM_USEDEP_OPTFLAGS=${IUSE_TARGETS[*]/%/(-)?}
+ROCM_USEDEP=${ROCM_USEDEP_OPTFLAGS// /,}
+ROCM_REQUIRED_USE=" || ( ${IUSE_TARGETS[*]} )"
+
+IUSE="${IUSE_TARGETS[*]/#/+} roctracer test"
+
+REQUIRED_USE="${ROCM_REQUIRED_USE}"
 
 RDEPEND="
 	dev-util/hip:${SLOT}
