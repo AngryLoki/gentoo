@@ -18,12 +18,9 @@ KEYWORDS="~amd64"
 
 IUSE_TARGETS=( gfx908 gfx90a gfx942 gfx950 gfx1100 gfx1101 gfx1102 gfx1151 gfx1200 gfx1201 )
 IUSE_TARGETS=( "${IUSE_TARGETS[@]/#/amdgpu_targets_}" )
-ROCM_USEDEP_OPTFLAGS=${IUSE_TARGETS[*]/%/(-)?}
-ROCM_USEDEP=${ROCM_USEDEP_OPTFLAGS// /,}
 ROCM_REQUIRED_USE=" || ( ${IUSE_TARGETS[*]} )"
 
 IUSE="${IUSE_TARGETS[*]/#/+} test"
-
 REQUIRED_USE="test? ( ${ROCM_REQUIRED_USE} )"
 
 RESTRICT="!test? ( test )"
